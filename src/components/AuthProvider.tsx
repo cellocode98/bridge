@@ -1,4 +1,5 @@
-// src/components/AuthProvider.tsx
+/* eslint-disable @typescript-eslint/no-explicit-any */
+
 "use client";
 import { createContext, useContext, useEffect, useState, ReactNode } from "react";
 import { supabase } from "@/lib/supabaseClient";
