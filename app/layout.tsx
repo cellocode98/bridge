@@ -15,12 +15,20 @@ export const metadata = {
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
     <html lang="en">
-      <body className={inter.className}>
-        {/* Inline fallback style used only for diagnosing CSS loading issues */}
+      <body
+        className={`${inter.className} bg-blue-50 text-gray-800 min-h-screen flex flex-col`}
+      >
         <AuthProvider>
+          {/* Navbar at the top */}
           <Navbar />
-          {children}
-          <Footer />   
+
+          {/* Main content grows to fill available space */}
+          <main className="flex-grow w-full">
+            {children}
+          </main>
+
+          {/* Footer sticks to the bottom naturally */}
+          <Footer />
         </AuthProvider>
       </body>
     </html>

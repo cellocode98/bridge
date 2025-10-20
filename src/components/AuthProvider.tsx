@@ -1,32 +1,102 @@
 // src/components/AuthProvider.tsx
 "use client";
-import { useEffect, useState, createContext, useContext } from "react";
-import { supabase } from "../lib/supabaseClient";
-import type { User, Session } from "@supabase/supabase-js";
+import { createContext, useContext, useEffect, useState, ReactNode } from "react";
+import { supabase } from "@/lib/supabaseClient";
 
-interface UserContextProps {
-  user: User | null;
+interface UserProfile {
+  id: string;
+  email: string;
+  name?: string;
+  avatar_url?: string;
+  bio?: string;
+  school?: string;
 }
 
-const UserContext = createContext<UserContextProps>({ user: null });
+interface AuthContextValue {
+  user: any | null;
+  profile: UserProfile | null;
+  loading: boolean;
+  updateProfile: (updates: Partial<UserProfile>) => Promise<void>;
+  signOut: () => Promise<void>;
+}
 
-export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
-  const [user, setUser] = useState<User | null>(null);
+const AuthContext = createContext<AuthContextValue>({
+  user: null,
+  profile: null,
+  loading: true,
+  updateProfile: async () => {},
+  signOut: async () => {},
+});
+
+export function useAuth() {
+  return useContext(AuthContext);
+}
+
+export function AuthProvider({ children }: { children: ReactNode }) {
+  const [user, setUser] = useState<any | null>(null);
+  const [profile, setProfile] = useState<UserProfile | null>(null);
+  const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    // load initial session
-    supabase.auth.getSession().then(({ data }) => setUser((data as { session: Session | null }).session?.user ?? null));
+    const initAuth = async () => {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (user) {
+        setUser(user);
+        await upsertUser(user);
+        await fetchProfile(user.id);
+      }
+      setLoading(false);
+    };
+    initAuth();
 
-    const { data: listener } = supabase.auth.onAuthStateChange((_event, session: Session | null) => {
-      setUser(session?.user ?? null);
+    const { data: listener } = supabase.auth.onAuthStateChange(async (_event, session) => {
+      if (session?.user) {
+        setUser(session.user);
+        await upsertUser(session.user);
+        await fetchProfile(session.user.id);
+      } else {
+        setUser(null);
+        setProfile(null);
+      }
     });
 
-    return () => {
-      listener?.subscription?.unsubscribe();
-    };
+    return () => listener?.subscription.unsubscribe();
   }, []);
 
-  return <UserContext.Provider value={{ user }}>{children}</UserContext.Provider>;
-};
+  const upsertUser = async (user: any) => {
+    await supabase.from("users").upsert({
+      id: user.id,
+      email: user.email,
+      name: user.user_metadata.full_name,
+      avatar_url: user.user_metadata.avatar_url,
+    });
+  };
 
-export const useAuth = () => useContext(UserContext);
+  const fetchProfile = async (userId: string) => {
+    const { data, error } = await supabase.from("users").select("*").eq("id", userId).single();
+    if (!error && data) setProfile(data);
+  };
+
+  const updateProfile = async (updates: Partial<UserProfile>) => {
+    if (!user) return;
+    const { data, error } = await supabase
+      .from("users")
+      .update(updates)
+      .eq("id", user.id)
+      .select()
+      .single();
+    if (!error && data) setProfile(data);
+  };
+
+  const signOut = async () => {
+    await supabase.auth.signOut();
+    setUser(null);
+    setProfile(null);
+  };
+
+  return (
+    <AuthContext.Provider value={{ user, profile, loading, updateProfile, signOut }}>
+      {children}
+    </AuthContext.Provider>
+  );
+}
