@@ -26,7 +26,7 @@ export default function UserHero({ subtitle }: UserHeroProps) {
 
       {/* Greeting & Subtitle */}
       <div>
-        <h1 className="text-3xl font-bold text-gray-700">{`Welcome, ${profile.name || "User"}!`}</h1>
+        <h1 className="text-3xl font-bold text-gray-700 font-sans">{`Welcome, ${profile.name || "User"}!`}</h1>
         {subtitle && <p className="text-gray-700 mt-1">{subtitle}</p>}
       </div>
     </div>

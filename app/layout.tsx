@@ -4,6 +4,8 @@ import { Inter } from "next/font/google";
 import { AuthProvider } from "../src/components/AuthProvider";
 import Navbar from "../src/components/Navbar";
 import Footer from "../src/components/Footer";
+import { Toaster } from "react-hot-toast";
+
 
 const inter = Inter({ subsets: ["latin"] });
 
@@ -25,6 +27,21 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
           {/* Main content grows to fill available space */}
           <main className="flex-grow w-full">
             {children}
+            <Toaster
+          position="top-right"
+          toastOptions={{
+            style: {
+              background: "#333",
+              color: "#fff",
+            },
+            success: {
+              iconTheme: {
+                primary: "#4ade80",
+                secondary: "#333",
+              },
+            },
+          }}
+        />
           </main>
 
           {/* Footer sticks to the bottom naturally */}

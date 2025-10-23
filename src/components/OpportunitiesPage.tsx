@@ -5,6 +5,8 @@ import { useState, useEffect } from "react";
 import { motion } from "framer-motion";
 import FeaturedCarousel from "@/components/FeaturedCarousel";
 import { supabase } from "@/lib/supabaseClient";
+import { useAuth } from "@/components/AuthProvider";
+import toast from "react-hot-toast";
 
 interface Opportunity {
   id: string;
@@ -18,26 +20,70 @@ interface Opportunity {
 export default function OpportunitiesPage() {
   const [allOpportunities, setAllOpportunities] = useState<Opportunity[]>([]);
   const [featuredOpportunities, setFeaturedOpportunities] = useState<Opportunity[]>([]);
+  const [appliedIds, setAppliedIds] = useState<string[]>([]);
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedFilter, setSelectedFilter] = useState("all");
   const [visibleCount, setVisibleCount] = useState(6);
 
-  // Fetch opportunities from Supabase
-  useEffect(() => {
-    const fetchOpportunities = async () => {
-      const { data, error } = await supabase
-        .from("opportunities")
-        .select("*")
-        .order("created_at", { ascending: false });
+  const { profile } = useAuth();
 
-      if (!error && data) {
-        setAllOpportunities(data);
-        setFeaturedOpportunities(data.filter((opp: any) => opp.featured));
-      }
-    };
-
+useEffect(() => {
     fetchOpportunities();
-  }, []);
+    if (profile) fetchUserApplications();
+  }, [profile]);
+
+  const fetchOpportunities = async () => {
+    const { data, error } = await supabase.from("opportunities").select("*");
+    if (error) toast.error("Failed to load opportunities");
+    else {setAllOpportunities(data || []) 
+      setFeaturedOpportunities(data.filter((opp: any) => opp.featured)); 
+      }
+  };
+
+  const fetchUserApplications = async () => {
+    const { data, error } = await supabase
+      .from("user_applications")
+      .select("opportunity_id")
+      .eq("user_id", profile?.id);
+
+    if (error) toast.error("Failed to load your applications");
+    else setAppliedIds(data.map((item) => item.opportunity_id));
+  };
+
+  const handleApply = async (opportunityId: string) => {
+    if (!profile) {
+      toast.error("You must be signed in to apply.");
+      return;
+    }
+
+    const { data: existing } = await supabase
+      .from("user_applications")
+      .select("id")
+      .eq("user_id", profile.id)
+      .eq("opportunity_id", opportunityId)
+      .maybeSingle();
+
+    if (existing) {
+      toast("You’ve already signed up for this opportunity.");
+      return;
+    }
+
+    const { error } = await supabase.from("user_applications").insert([
+      {
+        user_id: profile.id,
+        opportunity_id: opportunityId,
+        status: "pending",
+        applied_at: new Date().toISOString(),
+      },
+    ]);
+
+    if (error) {
+      toast.error("Something went wrong. Please try again.");
+    } else {
+      setAppliedIds((prev) => [...prev, opportunityId]);
+      toast.success("Successfully signed up! ✅");
+    }
+  };
 
   // Handle infinite scroll
   useEffect(() => {
@@ -148,7 +194,10 @@ export default function OpportunitiesPage() {
                   </div>
                 )}
               </div>
-              <button className="mt-4 px-4 py-2 bg-gradient-to-r from-blue-600 via-purple-600 to-pink-600 text-white rounded-lg hover:opacity-90 transition">
+              <button
+                className="mt-4 px-4 py-2 bg-gradient-to-r from-blue-600 via-purple-600 to-pink-600 text-white rounded-lg hover:opacity-90 transition"
+                onClick={() => handleApply(opp.id)}
+              >
                 Apply
               </button>
             </motion.div>
