@@ -3,102 +3,95 @@
 import { motion } from "framer-motion";
 
 export default function FeaturePreviews() {
-  const features = [
-    {
-      title: "Personalized Opportunities",
-      description:
-        "Quickly find programs and scholarships that match your goals, curated just for you.",
-      animation: (
-        <div className="flex gap-2">
-          {[1, 2, 3].map((i) => (
-            <motion.div
-              key={i}
-              className="w-12 h-16 bg-blue-400 rounded-lg"
-              animate={{ x: [0, 10, 0], opacity: [0.8, 1, 0.8] }}
-              transition={{ repeat: Infinity, duration: 1 + i * 0.3 }}
-            />
-          ))}
-        </div>
-      ),
-    },
-    {
-      title: "Community Driven",
-      description:
-        "Chat, collaborate, and grow with other students and mentors in real time.",
-      animation: (
-        <div className="flex flex-col gap-2">
-          {[1, 2, 3].map((i) => (
-            <motion.div
-              key={i}
-              className={`self-${i % 2 === 0 ? "start" : "end"} bg-pink-400 text-white px-3 py-1 rounded-full max-w-[70%]`}
-              animate={{ y: [0, -5, 0], opacity: [0.8, 1, 0.8] }}
-              transition={{ repeat: Infinity, duration: 1 + i * 0.4 }}
-            >
-              Hello!
-            </motion.div>
-          ))}
-        </div>
-      ),
-    },
-    {
-      title: "Planned Features",
-      description:
-        "See what’s coming soon and how Bridge is evolving with new tools and opportunities.",
-      animation: (
-        <div className="flex gap-3">
-          {["🛠️", "📅", "🚀"].map((icon, i) => (
-            <motion.div
-              key={i}
-              className="text-2xl"
-              animate={{ y: [0, -10, 0], rotate: [0, 10, -10, 0] }}
-              transition={{ repeat: Infinity, duration: 1 + i * 0.5, ease: "easeInOut" }}
-            >
-              {icon}
-            </motion.div>
-          ))}
-        </div>
-      ),
-    },
-  ];
-
   return (
-    <section className="relative flex flex-col items-center justify-center gap-40 px-6 py-40">
-      {/* Floating blobs behind features */}
-      {features.map((_, idx) => (
-        <motion.div
-          key={idx}
-          className={`absolute w-56 h-56 rounded-full opacity-20 blur-3xl ${
-            idx % 2 === 0 ? "bg-purple-200 left-[-100px]" : "bg-pink-200 right-[-100px]"
-          }`}
-          style={{ top: `${idx * 300}px` }}
-          animate={{ y: [0, 20, 0], x: [0, 15, 0] }}
-          transition={{ repeat: Infinity, duration: 12 + idx * 2, ease: "easeInOut" }}
-        />
-      ))}
+    <section className="relative py-32 bg-white text-gray-800 overflow-hidden">
+      {/* Section Header */}
+      <motion.div
+        initial={{ opacity: 0, y: 60 }}
+        whileInView={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.8, ease: "easeOut" }}
+        viewport={{ once: true }}
+        className="text-center mb-16 px-6"
+      >
+        <h2 className="text-4xl md:text-5xl font-extrabold mb-4 bg-clip-text text-transparent bg-gradient-to-r from-blue-700 to-purple-600">
+          Features That Empower You
+        </h2>
+        <p className="text-lg md:text-xl text-gray-600 max-w-2xl mx-auto">
+          Everything you need to connect, collaborate, and make an impact.
+        </p>
+      </motion.div>
 
-      <h2 className="text-4xl font-bold text-blue-600 mb-20 z-10">Explore Bridge Features</h2>
+      {/* Feature Cards */}
+      <div className="relative grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-10 px-8 h-100 md:px-16 lg:px-24 z-10">
+        {[
+          {
+            title: "Smart Matching",
+            desc: "Get personalized opportunity recommendations that align with your skills and interests.",
+            icon: "🔍",
+            gradient: "from-blue-500 to-purple-500",
+          },
+          {
+            title: "Impact Tracking",
+            desc: "Visualize your growth and community contributions with beautiful progress insights.",
+            icon: "📊",
+            gradient: "from-green-500 to-blue-500",
+          },
+          {
+            title: "Community Driven",
+            desc: "Join a thriving community of changemakers and amplify your impact together.",
+            icon: "🤝",
+            gradient: "from-orange-500 to-pink-500",
+          },
+          {
+            title: "Seamless Experience",
+            desc: "Enjoy an intuitive, fast, and mobile-friendly platform built for accessibility and ease.",
+            icon: "⚡",
+            gradient: "from-yellow-500 to-purple-500",
+          },
+        ].map((feature, idx) => (
+          <motion.div
+            key={idx}
+            initial={{ opacity: 0, y: 40 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            transition={{ delay: idx * 0.1, duration: 0.6, ease: "easeOut" }}
+            viewport={{ once: true }}
+            whileHover={{
+              y: -8,
+              scale: 1.03,
+              boxShadow:
+                "0 10px 25px rgba(59, 130, 246, 0.15), 0 4px 10px rgba(0,0,0,0.05)",
+            }}
+            className="group relative bg-white rounded-2xl p-8 shadow-md hover:shadow-xl transition-all border border-gray-100"
+          >
+            <div
+              className={`absolute inset-0 bg-gradient-to-r ${feature.gradient} opacity-10 rounded-2xl blur-xl group-hover:opacity-20 transition`}
+            />
+            <div className="relative z-10 flex flex-col items-start">
+              <div
+                className={`text-4xl mb-5 bg-gradient-to-r ${feature.gradient} bg-clip-text text-transparent`}
+              >
+                {feature.icon}
+              </div>
+              <h3 className="text-2xl font-semibold mb-3 text-gray-900">
+                {feature.title}
+              </h3>
+              <p className="text-gray-600 leading-relaxed">{feature.desc}</p>
+            </div>
+          </motion.div>
+        ))}
+      </div>
 
-      {features.map((feature, idx) => (
-        <motion.div
-          key={feature.title}
-          className={`flex flex-col md:flex-row items-center gap-16 w-full max-w-4xl z-10 ${
-            idx % 2 === 0 ? "md:flex-row" : "md:flex-row-reverse"
-          }`}
-          initial={{ opacity: 0, y: 60 }}
-          whileInView={{ opacity: 1, y: 0 }}
-          viewport={{ once: true, amount: 0.25 }}
-          transition={{ duration: 0.8, ease: "easeOut" }}
-        >
-          {/* Animation Box */}
-          <div className="flex-shrink-0">{feature.animation}</div>
-
-          {/* Text Description */}
-          <div className="max-w-md">
-            <h3 className="text-2xl font-semibold text-blue-600 mb-2">{feature.title}</h3>
-            <p className="text-gray-600">{feature.description}</p>
-          </div>
-        </motion.div>
-      ))}
+      {/* Floating Accent Blobs */}
+      <motion.div
+        className="absolute top-0 left-[-100px] w-80 h-80 bg-blue-300/20 rounded-full blur-3xl"
+        animate={{ y: [0, 20, 0], rotate: [0, 10, -10, 0] }}
+        transition={{ repeat: Infinity, duration: 14, ease: "easeInOut" }}
+      />
+      <motion.div
+        className="absolute bottom-[-100px] right-[-100px] w-96 h-96 bg-purple-300/20 rounded-full blur-3xl"
+        animate={{ y: [0, -20, 0], rotate: [0, -15, 15, 0] }}
+        transition={{ repeat: Infinity, duration: 18, ease: "easeInOut" }}
+      />
     </section>
   );
 }

@@ -4,12 +4,12 @@
 import { useState, useEffect } from "react";
 import { useAuth } from "@/components/AuthProvider";
 import UserHero from "@/components/UserHero";
-import CreateOpportunityModal from "@/components/CreateOpportunityModal";
 import { supabase } from "@/lib/supabaseClient";
 import OpportunityCard from "@/components/OpportunityCard";
 import HoursPieChart from "@/components/PieChart";
 import VolunteerCalendar from "@/components/VolunteerCalendar";
 import { motion, Variants, easeOut } from "framer-motion";
+import ImpactScore from "@/components/ImpactScore";
 
 interface Opportunity {
   id: string;
@@ -98,6 +98,7 @@ export default function DashboardPage() {
     : applications;
 
   return (
+    <div data-page-title="Dashboard">
     <motion.main
       initial={{ opacity: 0 }}
       animate={{ opacity: 1 }}
@@ -119,18 +120,7 @@ export default function DashboardPage() {
       {/* Unified Dashboard Container */}
       <div className="bg-white/20 backdrop-blur-lg border border-white/30 rounded-3xl shadow-2xl p-8 flex flex-col gap-10">
         {/* Quick Actions + Stats / Badges / Hours Row */}
-        <div className="flex flex-col md:flex-row items-start gap-6">
-          {/* Quick Action Buttons */}
-          <div className="flex gap-4 flex-wrap md:flex-col md:w-48">
-            <motion.button
-              whileHover={{ scale: 1.05 }}
-              whileTap={{ scale: 0.95 }}
-              className="px-7 py-36 bg-green-600/80 text-white font-semibold rounded-full shadow-lg hover:bg-green-700/90 transition"
-              onClick={() => setIsModalOpen(true)}
-            >
-              Create Opportunity
-            </motion.button>
-          </div>
+        <div className="flex flex-col md:flex-row items-start gap-6 overflow-hidden">
 
           {/* Cards Row */}
           <motion.div
@@ -138,7 +128,7 @@ export default function DashboardPage() {
             initial="hidden"
             whileInView="visible"
             viewport={{ once: true, amount: 0.2 }}
-            className="flex gap-6 overflow-x-auto md:flex-nowrap flex-wrap"
+            className="flex gap-6 flex-nowrap overflow-x-auto pb-2"
           >
             {/* Stats Card */}
             <motion.div variants={fadeInUp} className="w-full md:w-80 p-6 bg-blue-50 backdrop-blur-lg border border-white/30 rounded-3xl flex flex-col gap-4 flex-shrink-0">
@@ -182,6 +172,13 @@ export default function DashboardPage() {
                 ]}
               />
             </motion.div>
+
+            <motion.div variants={fadeInUp} className="w-96 p-5 bg-blue-50 backdrop-blur-lg border border-white/30 rounded-3xl flex flex-col gap-4 flex-shrink-0">
+              <h3 className="text-lg font-semibold text-gray-800">Impact Score</h3>
+              <ImpactScore
+              />
+            </motion.div>
+
 
             {/* Volunteer Calendar */}
             <motion.div variants={fadeInUp} className="w-96 p-5 bg-blue-50 backdrop-blur-lg border border-white/30 rounded-3xl flex flex-col gap-4 flex-shrink-0">
@@ -237,5 +234,6 @@ export default function DashboardPage() {
         </div>
       </div>
     </motion.main>
+    </div>
   );
 }

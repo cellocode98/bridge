@@ -13,7 +13,7 @@ export default function UserHero({ subtitle }: UserHeroProps) {
   if (!profile) return null;
 
   return (
-    <div className="flex flex-col md:flex-row items-center gap-6 pt-24">
+    <div className="flex flex-col md:flex-row items-center gap-6 pt-3">
       {/* Avatar */}
       <div className="w-28 h-28 relative rounded-full overflow-hidden">
         <Image

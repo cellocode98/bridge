@@ -1,0 +1,239 @@
+"use client";
+
+import { useState, useEffect, FormEvent } from "react";
+import { supabase } from "@/lib/supabaseClient";
+import { useAuth } from "@/components/AuthProvider";
+import toast from "react-hot-toast";
+
+// TypeScript interfaces
+interface Opportunity {
+  id?: string;
+  title: string;
+  description: string;
+  featured: boolean;
+  address?: string;
+  latitude?: number;
+  longitude?: number;
+}
+
+interface ProofWithJoins {
+  id: string;
+  image_url: string;
+  verification_code: string;
+  verified: boolean;
+  user_id: string;
+  opportunity_id: string;
+  user: { id: string; full_name: string; email: string } | null;
+  opportunity: { id: string; title: string; organization: string } | null;
+}
+
+export default function OrganizationDashboard() {
+  const { profile } = useAuth();
+
+  /** ---- State ---- **/
+  const [proofs, setProofs] = useState<ProofWithJoins[]>([]);
+  const [loadingProofs, setLoadingProofs] = useState(false);
+
+  const [newOpportunity, setNewOpportunity] = useState<Opportunity>({
+    title: "",
+    description: "",
+    featured: false,
+    address: "",
+  });
+  const [creating, setCreating] = useState(false);
+
+  /** ---- Fetch pending proofs ---- **/
+  useEffect(() => {
+    async function fetchPendingProofs() {
+      setLoadingProofs(true);
+      try {
+        const { data: proofsData, error: proofsError } = await supabase
+          .from("proofs")
+          .select("*")
+          .eq("verified", false);
+
+        if (proofsError) throw proofsError;
+
+        // Enrich proofs with user & opportunity
+        const enriched: ProofWithJoins[] = await Promise.all(
+          (proofsData || []).map(async (proof: any) => {
+            const { data: user } = await supabase
+              .from("users")
+              .select("id, name, email")
+              .eq("id", proof.user_id)
+              .single();
+
+            const { data: opportunity } = await supabase
+              .from("opportunities")
+              .select("id, title, organization")
+              .eq("id", proof.opportunity_id)
+              .single();
+
+            return { ...proof, user, opportunity };
+          })
+        );
+
+        setProofs(enriched);
+      } catch (err) {
+        console.error(err);
+        toast.error("Failed to load proofs.");
+      }
+      setLoadingProofs(false);
+    }
+
+    fetchPendingProofs();
+  }, []);
+
+  /** ---- Mark proof verified ---- **/
+  const markVerified = async (id: string) => {
+    const { error } = await supabase.from("proofs").update({ verified: true }).eq("id", id);
+    if (error) toast.error("Failed to verify proof.");
+    else setProofs((prev) => prev.map((p) => (p.id === id ? { ...p, verified: true } : p)));
+  };
+
+  /** ---- Geocode address ---- **/
+  const geocodeAddress = async (address: string) => {
+    const res = await fetch(
+      `https://nominatim.openstreetmap.org/search?q=${encodeURIComponent(
+        address
+      )}&format=json&limit=1`
+    );
+    const data = await res.json();
+    if (data && data[0]) return { lat: parseFloat(data[0].lat), lng: parseFloat(data[0].lon) };
+    return null;
+  };
+
+  /** ---- Handle create opportunity ---- **/
+  const handleCreateOpportunity = async (e: FormEvent) => {
+    e.preventDefault();
+    if (!profile) return;
+
+    if (!newOpportunity.title || !newOpportunity.description || !newOpportunity.address) {
+      toast.error("Please fill out all required fields.");
+      return;
+    }
+
+    setCreating(true);
+
+    const coords = await geocodeAddress(newOpportunity.address);
+    if (!coords) {
+      toast.error("Could not find coordinates for this address.");
+      setCreating(false);
+      return;
+    }
+
+    const { error } = await supabase.from("opportunities").insert([
+      {
+        title: newOpportunity.title,
+        description: newOpportunity.description,
+        featured: newOpportunity.featured,
+        organization: profile.name || profile.email,
+        latitude: coords.lat,
+        longitude: coords.lng,
+      },
+    ]);
+
+    if (error) {
+        console.error(error) 
+        toast.error("Failed to create opportunity."); }
+    else {
+      toast.success("Opportunity created!");
+      setNewOpportunity({ title: "", description: "", featured: false, address: "" });
+    }
+
+    setCreating(false);
+  };
+
+  /** ---- Render ---- **/
+  return (
+    <div data-page-title="Organization Dashboard" className="max-w-5xl mx-auto p-6 text-gray-700">
+      <h1 className="text-3xl font-bold mb-6">Organization Dashboard</h1>
+
+      {/* --- Pending Proofs --- */}
+      <section className="mb-12">
+        <h2 className="text-2xl font-semibold mb-4">Pending Proofs</h2>
+        {loadingProofs && <p>Loading proofs...</p>}
+        {!loadingProofs && proofs.length === 0 && <p>No pending proofs.</p>}
+        <div className="space-y-4">
+          {proofs.map((proof) => (
+            <div key={proof.id} className="border p-4 rounded">
+              <p>
+                <strong>User:</strong> {proof.user?.full_name || proof.user?.email || proof.user_id}
+              </p>
+              <p>
+                <strong>Opportunity:</strong>{" "}
+                {proof.opportunity?.title || "Unknown"} (
+                {proof.opportunity?.organization || "N/A"})
+              </p>
+              <p>
+                <strong>Verification Code:</strong> {proof.verification_code}
+              </p>
+              <img src={proof.image_url} alt="Proof" className="my-2 max-h-64 object-contain" />
+              {!proof.verified && (
+                <button
+                  onClick={() => markVerified(proof.id)}
+                  className="bg-green-600 text-white px-4 py-2 rounded mt-2 hover:bg-green-700"
+                >
+                  Mark Verified
+                </button>
+              )}
+            </div>
+          ))}
+        </div>
+      </section>
+
+      {/* --- Add Opportunity --- */}
+      <section>
+        <h2 className="text-2xl font-semibold mb-4">Add New Opportunity</h2>
+        <form onSubmit={handleCreateOpportunity} className="space-y-4">
+          <div>
+            <label className="block mb-1 font-medium">Title</label>
+            <input
+              type="text"
+              className="w-full border p-2 rounded"
+              value={newOpportunity.title}
+              onChange={(e) =>
+                setNewOpportunity({ ...newOpportunity, title: e.target.value })
+              }
+              required
+            />
+          </div>
+
+          <div>
+            <label className="block mb-1 font-medium">Description</label>
+            <textarea
+              className="w-full border p-2 rounded"
+              value={newOpportunity.description}
+              onChange={(e) =>
+                setNewOpportunity({ ...newOpportunity, description: e.target.value })
+              }
+              required
+            />
+          </div>
+
+          <div>
+            <label className="block mb-1 font-medium">Address</label>
+            <input
+              type="text"
+              className="w-full border p-2 rounded"
+              value={newOpportunity.address}
+              onChange={(e) =>
+                setNewOpportunity({ ...newOpportunity, address: e.target.value })
+              }
+              placeholder="123 Main St, City, State"
+              required
+            />
+          </div>
+
+          <button
+            type="submit"
+            disabled={creating}
+            className="bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700"
+          >
+            {creating ? "Creating..." : "Create Opportunity"}
+          </button>
+        </form>
+      </section>
+    </div>
+  );
+}

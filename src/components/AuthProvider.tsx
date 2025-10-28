@@ -7,6 +7,7 @@ import { supabase } from "@/lib/supabaseClient";
 interface UserProfile {
   id: string;
   email: string;
+  role: string; // ← added role
   name?: string;
   avatar_url?: string;
   bio?: string;
@@ -65,16 +66,27 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   }, []);
 
   const upsertUser = async (user: any) => {
-    await supabase.from("users").upsert({
-      id: user.id,
-      email: user.email,
-      name: user.user_metadata.full_name,
-      avatar_url: user.user_metadata.avatar_url,
-    });
-  };
+  await supabase
+    .from("users")
+    .upsert(
+      {
+        id: user.id,
+        email: user.email,
+        name: user.user_metadata?.full_name,
+        avatar_url: user.user_metadata?.avatar_url,
+      },
+      { onConflict: "id", ignoreDuplicates: true } // <- preserves existing role
+        );
+    };
+
 
   const fetchProfile = async (userId: string) => {
-    const { data, error } = await supabase.from("users").select("*").eq("id", userId).single();
+    const { data, error } = await supabase
+      .from("users")
+      .select("*")
+      .eq("id", userId)
+      .single();
+
     if (!error && data) setProfile(data);
   };
 

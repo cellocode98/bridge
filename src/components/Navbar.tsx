@@ -1,13 +1,14 @@
-"use client";
-
+"use client"
 import Link from "next/link";
 import { motion } from "framer-motion";
 import { useState } from "react";
 import { usePathname } from "next/navigation";
+import { useAuth } from "@/components/AuthProvider";
 
 export default function Navbar() {
   const [isOpen, setIsOpen] = useState(false);
-  const pathname = usePathname(); // get current path
+  const pathname = usePathname();
+  const { profile } = useAuth(); // <-- use profile, not user
 
   const links = [
     { name: "Dashboard", href: "/dashboard" },
@@ -15,6 +16,11 @@ export default function Navbar() {
     { name: "Profile", href: "/profile" },
     { name: "Login", href: "/auth" },
   ];
+
+  // Conditionally add Verify button for orgs
+  if (profile?.role === "organization") {
+    links.splice(1, 0, { name: "Verify", href: "/verify" });
+  }
 
   const getLinkClass = (href: string) =>
     href === pathname
@@ -24,19 +30,13 @@ export default function Navbar() {
   return (
     <nav className="bg-white/70 backdrop-blur-md shadow-md fixed w-full z-50">
       <div className="max-w-7xl mx-auto px-6 flex justify-between items-center h-16">
-        {/* Logo */}
         <Link href="/" className="text-2xl font-bold text-blue-600 flex items-center gap-2">
           <span className="text-3xl">🌉</span> Bridge
         </Link>
 
-        {/* Desktop Links */}
         <div className="hidden md:flex gap-6 items-center">
           {links.map((link) => (
-            <motion.div
-              key={link.name}
-              whileHover={{ scale: 1.1 }}
-              whileTap={{ scale: 0.95 }}
-            >
+            <motion.div key={link.name} whileHover={{ scale: 1.1 }} whileTap={{ scale: 0.95 }}>
               <Link href={link.href} className={getLinkClass(link.href)}>
                 {link.name}
               </Link>
@@ -44,18 +44,13 @@ export default function Navbar() {
           ))}
         </div>
 
-        {/* Mobile Hamburger */}
         <div className="md:hidden flex items-center">
-          <button
-            onClick={() => setIsOpen(!isOpen)}
-            className="text-gray-700 focus:outline-none"
-          >
+          <button onClick={() => setIsOpen(!isOpen)} className="text-gray-700 focus:outline-none">
             {isOpen ? "✕" : "☰"}
           </button>
         </div>
       </div>
 
-      {/* Mobile Menu */}
       {isOpen && (
         <motion.div
           initial={{ opacity: 0, y: -20 }}
@@ -80,4 +75,3 @@ export default function Navbar() {
     </nav>
   );
 }
-

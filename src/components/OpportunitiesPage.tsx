@@ -15,6 +15,9 @@ interface Opportunity {
   description: string;
   featured: boolean;
   tags?: string[];
+  latitude?: number;
+  longitude?: number;
+  distanceMiles?: number; // dynamically calculated
 }
 
 export default function OpportunitiesPage() {
@@ -24,10 +27,28 @@ export default function OpportunitiesPage() {
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedFilter, setSelectedFilter] = useState("all");
   const [visibleCount, setVisibleCount] = useState(6);
+  const [userLocation, setUserLocation] = useState<{ lat: number; lng: number } | null>(null);
 
   const { profile } = useAuth();
 
-useEffect(() => {
+  // --- LOCATION GRAB ---
+  useEffect(() => {
+    if (navigator.geolocation) {
+      navigator.geolocation.getCurrentPosition(
+        (position) => {
+          setUserLocation({
+            lat: position.coords.latitude,
+            lng: position.coords.longitude,
+          });
+        },
+        (err) => console.error("Location error:", err),
+        { enableHighAccuracy: true }
+      );
+    }
+  }, []);
+
+  // --- FETCH DATA ---
+  useEffect(() => {
     fetchOpportunities();
     if (profile) fetchUserApplications();
   }, [profile]);
@@ -35,9 +56,10 @@ useEffect(() => {
   const fetchOpportunities = async () => {
     const { data, error } = await supabase.from("opportunities").select("*");
     if (error) toast.error("Failed to load opportunities");
-    else {setAllOpportunities(data || []) 
-      setFeaturedOpportunities(data.filter((opp: any) => opp.featured)); 
-      }
+    else {
+      setAllOpportunities(data || []);
+      setFeaturedOpportunities(data?.filter((opp: any) => opp.featured) || []);
+    }
   };
 
   const fetchUserApplications = async () => {
@@ -72,7 +94,7 @@ useEffect(() => {
       {
         user_id: profile.id,
         opportunity_id: opportunityId,
-        status: "pending",
+        status: "Upcoming",
         applied_at: new Date().toISOString(),
       },
     ]);
@@ -85,7 +107,7 @@ useEffect(() => {
     }
   };
 
-  // Handle infinite scroll
+  // --- INFINITE SCROLL ---
   useEffect(() => {
     const handleScroll = () => {
       if (
@@ -99,25 +121,61 @@ useEffect(() => {
     return () => window.removeEventListener("scroll", handleScroll);
   }, [visibleCount, allOpportunities, selectedFilter, searchQuery]);
 
+  // --- FILTERS ---
   const filters = ["All", "STEM", "Community", "Arts", "High Impact"];
 
-  const filteredOpportunities = allOpportunities.filter((opp) => {
-    const matchesSearch =
-      opp.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      opp.organization.toLowerCase().includes(searchQuery.toLowerCase());
-    const matchesFilter =
-      selectedFilter === "all" || (opp.tags && opp.tags.includes(selectedFilter));
-    return matchesSearch && matchesFilter;
-  });
+  // --- HAVERSINE DISTANCE CALCULATION ---
+  const getDistanceFromLatLonInMiles = (
+    lat1: number,
+    lon1: number,
+    lat2: number,
+    lon2: number
+  ) => {
+    const R = 3958.8; // Radius of Earth in miles
+    const dLat = ((lat2 - lat1) * Math.PI) / 180;
+    const dLon = ((lon2 - lon1) * Math.PI) / 180;
+    const a =
+      Math.sin(dLat / 2) * Math.sin(dLat / 2) +
+      Math.cos((lat1 * Math.PI) / 180) *
+        Math.cos((lat2 * Math.PI) / 180) *
+        Math.sin(dLon / 2) *
+        Math.sin(dLon / 2);
+    const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+    return R * c;
+  };
+
+  // --- FILTERED & SORTED OPPORTUNITIES ---
+  const filteredOpportunities = allOpportunities
+    .map((opp) => {
+      let distanceMiles: number | undefined = undefined;
+      if (userLocation && opp.latitude && opp.longitude) {
+        distanceMiles = getDistanceFromLatLonInMiles(
+          userLocation.lat,
+          userLocation.lng,
+          Number(opp.latitude),
+          Number(opp.longitude)
+        );
+      }
+      return { ...opp, distanceMiles };
+    })
+    .filter((opp) => {
+      const matchesSearch =
+        opp.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
+        opp.organization.toLowerCase().includes(searchQuery.toLowerCase());
+      const matchesFilter =
+        selectedFilter === "all" || (opp.tags && opp.tags.includes(selectedFilter));
+      return matchesSearch && matchesFilter;
+    })
+    .sort((a, b) => {
+      if (a.distanceMiles === undefined) return 1;
+      if (b.distanceMiles === undefined) return -1;
+      return a.distanceMiles - b.distanceMiles;
+    });
 
   return (
-    <main className="pt-20 min-h-screen bg-gradient-to-br from-blue-50 via-purple-50 to-pink-50 p-6">
+    <main data-page-title="Discover Opportunities" className="pt-20 min-h-screen bg-gradient-to-br from-blue-50 via-purple-50 to-pink-50 p-6">
       {/* Hero Section */}
       <section className="relative mb-12">
-        {/* Floating blobs */}
-        <div className="absolute -top-32 -left-32 w-72 h-72 bg-pink-300/30 rounded-full filter blur-3xl animate-[blob_8s_infinite]"></div>
-        <div className="absolute top-0 right-0 w-96 h-96 bg-blue-300/20 rounded-full filter blur-3xl animate-[blob2_12s_infinite]"></div>
-
         <h1 className="text-5xl font-extrabold text-gray-900 mb-4">Discover Opportunities</h1>
         <p className="text-gray-700 text-lg max-w-2xl">
           Connect with impactful volunteer opportunities and make a difference.
@@ -158,7 +216,7 @@ useEffect(() => {
         </div>
       </section>
 
-      {/* All Opportunities - Infinite Fade-In Scroll */}
+      {/* Opportunities Grid */}
       <section>
         <h2 className="text-2xl font-semibold text-gray-800 mb-4">
           {filteredOpportunities.length === 0 ? "No opportunities found" : "All Opportunities"}
@@ -179,7 +237,10 @@ useEffect(() => {
             >
               <div>
                 <p className="font-bold text-xl text-gray-800">{opp.title}</p>
-                <p className="text-gray-700 text-sm mt-1">{opp.organization}</p>
+                <p className="text-gray-700 text-sm mt-1">
+                  {opp.organization}
+                  {opp.distanceMiles !== undefined && ` • ${opp.distanceMiles.toFixed(1)} miles away`}
+                </p>
                 <p className="text-gray-700 text-sm mt-2 line-clamp-4">{opp.description}</p>
                 {opp.tags && (
                   <div className="mt-2 flex flex-wrap gap-2">
@@ -207,6 +268,3 @@ useEffect(() => {
     </main>
   );
 }
-
-
-
