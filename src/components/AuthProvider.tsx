@@ -39,35 +39,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [profile, setProfile] = useState<UserProfile | null>(null);
   const [loading, setLoading] = useState(true);
 
-  useEffect(() => {
-    const initAuth = async () => {
-      // Restore session from local storage
-      const { data: { session } } = await supabase.auth.getSession();
-
-      if (session?.user) {
-        setUser(session.user);
-        await upsertUser(session.user);
-        await fetchProfile(session.user.id);
-      }
-      setLoading(false);
-    };
-
-    initAuth();
-
-    const { data: listener } = supabase.auth.onAuthStateChange(async (_event, session) => {
-      if (session?.user) {
-        setUser(session.user);
-        await upsertUser(session.user);
-        await fetchProfile(session.user.id);
-      } else {
-        setUser(null);
-        setProfile(null);
-      }
-    });
-
-    return () => listener.subscription.unsubscribe();
-  }, []);
-
+  // Function to upsert user in DB
   const upsertUser = async (user: any) => {
     await supabase
       .from("users")
@@ -82,6 +54,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       );
   };
 
+  // Fetch user profile from DB
   const fetchProfile = async (userId: string) => {
     const { data, error } = await supabase
       .from("users")
@@ -92,6 +65,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     if (!error && data) setProfile(data);
   };
 
+  // Update user profile
   const updateProfile = async (updates: Partial<UserProfile>) => {
     if (!user) return;
     const { data, error } = await supabase
@@ -100,19 +74,48 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       .eq("id", user.id)
       .select()
       .single();
-
     if (!error && data) setProfile(data);
   };
 
+  // Sign out
   const signOut = async () => {
     await supabase.auth.signOut();
     setUser(null);
     setProfile(null);
   };
 
+  useEffect(() => {
+    const initAuth = async () => {
+      // Get current session
+      const { data: { session } } = await supabase.auth.getSession();
+      if (session?.user) {
+        setUser(session.user);
+        await upsertUser(session.user);
+        await fetchProfile(session.user.id);
+      }
+      setLoading(false);
+    };
+
+    initAuth();
+
+    // Listen for auth changes
+    const { data: listener } = supabase.auth.onAuthStateChange(async (_event, session) => {
+      if (session?.user) {
+        setUser(session.user);
+        await upsertUser(session.user);
+        await fetchProfile(session.user.id);
+      } else {
+        setUser(null);
+        setProfile(null);
+      }
+    });
+
+    return () => listener.subscription.unsubscribe();
+  }, []);
+
   return (
     <AuthContext.Provider value={{ user, profile, loading, updateProfile, signOut }}>
-      {children}
+      {loading ? <p>Loading...</p> : children}
     </AuthContext.Provider>
   );
 }
