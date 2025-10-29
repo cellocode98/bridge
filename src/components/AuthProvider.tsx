@@ -1,13 +1,13 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
-
 "use client";
+
 import { createContext, useContext, useEffect, useState, ReactNode } from "react";
 import { supabase } from "@/lib/supabaseClient";
 
 interface UserProfile {
   id: string;
   email: string;
-  role: string; 
+  role: string;
   name?: string;
   avatar_url?: string;
   bio?: string;
@@ -41,14 +41,17 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   useEffect(() => {
     const initAuth = async () => {
-      const { data: { user } } = await supabase.auth.getUser();
-      if (user) {
-        setUser(user);
-        await upsertUser(user);
-        await fetchProfile(user.id);
+      // Restore session from local storage
+      const { data: { session } } = await supabase.auth.getSession();
+
+      if (session?.user) {
+        setUser(session.user);
+        await upsertUser(session.user);
+        await fetchProfile(session.user.id);
       }
       setLoading(false);
     };
+
     initAuth();
 
     const { data: listener } = supabase.auth.onAuthStateChange(async (_event, session) => {
@@ -62,23 +65,22 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       }
     });
 
-    return () => listener?.subscription.unsubscribe();
+    return () => listener.subscription.unsubscribe();
   }, []);
 
   const upsertUser = async (user: any) => {
-  await supabase
-    .from("users")
-    .upsert(
-      {
-        id: user.id,
-        email: user.email,
-        name: user.user_metadata?.full_name,
-        avatar_url: user.user_metadata?.avatar_url,
-      },
-      { onConflict: "id", ignoreDuplicates: true } // <- preserves existing role
-        );
-    };
-
+    await supabase
+      .from("users")
+      .upsert(
+        {
+          id: user.id,
+          email: user.email,
+          name: user.user_metadata?.full_name,
+          avatar_url: user.user_metadata?.avatar_url,
+        },
+        { onConflict: "id", ignoreDuplicates: true } // preserves existing role
+      );
+  };
 
   const fetchProfile = async (userId: string) => {
     const { data, error } = await supabase
@@ -98,6 +100,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       .eq("id", user.id)
       .select()
       .single();
+
     if (!error && data) setProfile(data);
   };
 
