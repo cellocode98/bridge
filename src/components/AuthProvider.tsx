@@ -7,7 +7,7 @@ import { supabase } from "@/lib/supabaseClient";
 interface UserProfile {
   id: string;
   email: string;
-  role?: string;
+  role: string;
   name?: string;
   avatar_url?: string;
   bio?: string;
@@ -38,44 +38,46 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [user, setUser] = useState<any | null>(null);
   const [profile, setProfile] = useState<UserProfile | null>(null);
   const [loading, setLoading] = useState(true);
+  const [hydrated, setHydrated] = useState(false); // track hydration
+
+  useEffect(() => {
+    setHydrated(true);
+  }, []);
 
   useEffect(() => {
     const initAuth = async () => {
-      try {
-        const { data: { session }, error } = await supabase.auth.getSession();
-        if (error) console.error("Error getting session:", error);
+      const {
+        data: { user: currentUser },
+      } = await supabase.auth.getUser();
+      if (currentUser) {
+        setUser(currentUser);
+        await upsertUser(currentUser);
+        await fetchProfile(currentUser.id);
+      }
+      setLoading(false);
+    };
+    initAuth();
 
+    const { data: listener } = supabase.auth.onAuthStateChange(
+      async (_event, session) => {
         if (session?.user) {
           setUser(session.user);
           await upsertUser(session.user);
           await fetchProfile(session.user.id);
+        } else {
+          setUser(null);
+          setProfile(null);
         }
-      } catch (err) {
-        console.error("Error initializing auth:", err);
-      } finally {
-        setLoading(false); // ensure loading ends
       }
-    };
+    );
 
-    initAuth();
-
-    const { data: listener } = supabase.auth.onAuthStateChange(async (_event, session) => {
-      if (session?.user) {
-        setUser(session.user);
-        await upsertUser(session.user);
-        await fetchProfile(session.user.id);
-      } else {
-        setUser(null);
-        setProfile(null);
-      }
-    });
-
-    return () => listener.subscription.unsubscribe();
+    return () => listener?.subscription.unsubscribe();
   }, []);
 
   const upsertUser = async (user: any) => {
-    try {
-      await supabase.from("users").upsert(
+    await supabase
+      .from("users")
+      .upsert(
         {
           id: user.id,
           email: user.email,
@@ -84,50 +86,40 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         },
         { onConflict: "id", ignoreDuplicates: true } // preserves existing role
       );
-    } catch (err) {
-      console.error("Error upserting user:", err);
-    }
   };
 
   const fetchProfile = async (userId: string) => {
-    try {
-      const { data, error } = await supabase.from("users").select("*").eq("id", userId).single();
-      if (error) console.error("Error fetching profile:", error);
-      if (data) setProfile(data);
-    } catch (err) {
-      console.error("Error fetching profile:", err);
-    }
+    const { data, error } = await supabase
+      .from("users")
+      .select("*")
+      .eq("id", userId)
+      .single();
+    if (!error && data) setProfile(data);
   };
 
   const updateProfile = async (updates: Partial<UserProfile>) => {
     if (!user) return;
-    try {
-      const { data, error } = await supabase
-        .from("users")
-        .update(updates)
-        .eq("id", user.id)
-        .select()
-        .single();
-      if (error) console.error("Error updating profile:", error);
-      if (data) setProfile(data);
-    } catch (err) {
-      console.error("Error updating profile:", err);
-    }
+    const { data, error } = await supabase
+      .from("users")
+      .update(updates)
+      .eq("id", user.id)
+      .select()
+      .single();
+    if (!error && data) setProfile(data);
   };
 
   const signOut = async () => {
-    try {
-      await supabase.auth.signOut();
-    } catch (err) {
-      console.error("Error signing out:", err);
-    } finally {
-      setUser(null);
-      setProfile(null);
-    }
+    await supabase.auth.signOut();
+    setUser(null);
+    setProfile(null);
   };
 
+  if (!hydrated) return null;
+
   return (
-    <AuthContext.Provider value={{ user, profile, loading, updateProfile, signOut }}>
+    <AuthContext.Provider
+      value={{ user, profile, loading, updateProfile, signOut }}
+    >
       {children}
     </AuthContext.Provider>
   );
