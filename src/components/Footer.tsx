@@ -6,7 +6,7 @@ import { motion } from "framer-motion";
 export default function Footer() {
   return (
     <footer className="relative bg-gradient-to-r from-blue-50 to-blue-100 text-gray-700 py-10 px-6 mt-16 overflow-hidden">
-      {/* Floating blobs for playful touch */}
+      {/* BLOBz */}
       <motion.div
         className="absolute top-[-40px] left-[-60px] w-40 h-40 bg-purple-200 rounded-full opacity-20 blur-2xl"
         animate={{ y: [0, 15, 0], x: [0, 10, 0] }}
@@ -20,9 +20,9 @@ export default function Footer() {
 
       <div className="relative z-10 flex flex-col md:flex-row items-center justify-between max-w-6xl mx-auto gap-4 md:gap-0">
         {/* Branding */}
-        <span className="text-lg font-semibold">© 2025 Bridge. All rights reserved.</span>
+        <span className="text-lg font-semibold">© 2025 Bridge.</span>
 
-        {/* Links */}
+        {/* Links - can be done in the foreseeable future*/}
         <div className="flex gap-6 text-blue-600 font-medium">
           <Link href="/privacy" className="hover:underline">
             Privacy

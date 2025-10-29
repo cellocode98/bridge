@@ -4,6 +4,7 @@ import { useState } from "react";
 import { useSearchParams } from "next/navigation";
 import { supabase } from "@/lib/supabaseClient";
 import { useAuth } from "@/components/AuthProvider"; // adjust this import if needed
+import toast from "react-hot-toast";
 
 export default function ProofUploadPage() {
   const { user, loading } = useAuth();
@@ -21,69 +22,52 @@ export default function ProofUploadPage() {
     return Array.from({ length }, () => chars[Math.floor(Math.random() * chars.length)]).join("");
   }
 
-  async function handleUpload() {
-
-    const { data: sessionData, error: sessionError } = await supabase.auth.getSession();
-    if (sessionError || !sessionData?.session?.user) {
-      console.error("No valid session");
-      setUploading(false);
-      return;
-    }
-    const uid = sessionData.session.user.id;
-
-    if (!file || !user || !opportunityId) {
-      alert("Missing file, user, or opportunity.");
-      return;
-    }
-
-    try {
-      setUploading(true);
-
-      // 1️⃣ Upload to Supabase Storage
-      const fileName = `${user.id}-${Date.now()}-${file.name}`;
-      const { data: storageData, error: storageError } = await supabase.storage
-        .from("proofs") // ensure this bucket exists in Supabase Storage
-        .upload(fileName, file);
-
-      if (storageError) throw storageError;
-
-      const { data: publicUrlData } = supabase.storage
-        .from("proofs")
-        .getPublicUrl(storageData.path);
-
-      const imageUrl = publicUrlData.publicUrl;
-      setUploadedUrl(imageUrl);
-
-      // 2️⃣ Generate verification code
-      const verificationCode = generateCode();
-      setVerificationCode(verificationCode);
-
-      // 3️⃣ Insert record into proofs table
-      const { error: insertError } = await supabase.from("proofs").insert([
-        {
-            user_id: uid,  // must match auth.uid()
-            opportunity_id: opportunityId,
-            image_url: imageUrl,
-            verification_code: verificationCode,
-            verified: false,
-        },
-        ]);
-
-      if (insertError) throw insertError;
-
-      alert("Proof uploaded successfully!");
-    } catch (error) {
-      console.error(error);
-      alert("Upload failed.");
-    } finally {
-      setUploading(false);
-    }
+async function handleUpload() {
+  if (!user || !file || !opportunityId) {
+    toast.error("Missing user, file, or opportunity ID.");
+    return;
   }
 
-  if (loading) return <p>Loading session...</p>;
-  if (!user) return <p>Please log in to upload proof.</p>;
-  console.log("User object:", user);
-console.log("user.id:", user?.id);
+  try {
+    setUploading(true);
+
+    // Convert file to base64
+    const reader = new FileReader();
+    const base64: string = await new Promise((resolve, reject) => {
+      reader.onload = () => resolve((reader.result as string).split(",")[1]);
+      reader.onerror = reject;
+      reader.readAsDataURL(file);
+    });
+
+    // Generate verification code
+    const verificationCode = generateCode();
+    setVerificationCode(verificationCode);
+
+    // Call server-side API
+    const response = await fetch("/api/upload-proof", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        fileBase64: base64,
+        user_id: user.id,
+        opportunity_id: opportunityId,
+        verification_code: verificationCode,
+      }),
+    });
+
+    const result = await response.json();
+    if (!response.ok) throw new Error(result.error || "Server error");
+
+    setUploadedUrl(result.imageUrl);
+    toast.success("Proof uploaded successfully!");
+  } catch (error: any) {
+    console.error("Upload failed:", error);
+    toast.error(`Upload failed: ${error.message || error}`);
+  } finally {
+    setUploading(false);
+  }
+}
+
 
   return (
     <div data-page-title="Upload Proof" className="max-w-lg mx-auto mt-16 p-6 bg-white/40 backdrop-blur-lg rounded-3xl shadow-xl">

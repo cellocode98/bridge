@@ -18,7 +18,7 @@ export default function LoginPage() {
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
 
-  // Flexible redirect function
+  // flexible redirect function
   const redirectAfterLogin = (role?: string) => {
     if (role === "organization") {
       router.push("/verify"); // default org page

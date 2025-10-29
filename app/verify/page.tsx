@@ -5,7 +5,7 @@ import { supabase } from "@/lib/supabaseClient";
 import { useAuth } from "@/components/AuthProvider";
 import toast from "react-hot-toast";
 
-// TypeScript interfaces
+//typescript interfaces
 interface Opportunity {
   id?: string;
   title: string;
@@ -14,6 +14,7 @@ interface Opportunity {
   address?: string;
   latitude?: number;
   longitude?: number;
+  date?: string;
 }
 
 interface ProofWithJoins {
@@ -30,7 +31,7 @@ interface ProofWithJoins {
 export default function OrganizationDashboard() {
   const { profile } = useAuth();
 
-  /** ---- State ---- **/
+  /** states **/
   const [proofs, setProofs] = useState<ProofWithJoins[]>([]);
   const [loadingProofs, setLoadingProofs] = useState(false);
 
@@ -42,7 +43,7 @@ export default function OrganizationDashboard() {
   });
   const [creating, setCreating] = useState(false);
 
-  /** ---- Fetch pending proofs ---- **/
+  /** fetch proofs to be verified **/
   useEffect(() => {
     async function fetchPendingProofs() {
       setLoadingProofs(true);
@@ -51,10 +52,10 @@ export default function OrganizationDashboard() {
           .from("proofs")
           .select("*")
           .eq("verified", false);
-
+        console.log(proofsData)
         if (proofsError) throw proofsError;
 
-        // Enrich proofs with user & opportunity
+        // enrich
         const enriched: ProofWithJoins[] = await Promise.all(
           (proofsData || []).map(async (proof: any) => {
             const { data: user } = await supabase
@@ -84,14 +85,31 @@ export default function OrganizationDashboard() {
     fetchPendingProofs();
   }, []);
 
-  /** ---- Mark proof verified ---- **/
-  const markVerified = async (id: string) => {
-    const { error } = await supabase.from("proofs").update({ verified: true }).eq("id", id);
-    if (error) toast.error("Failed to verify proof.");
-    else setProofs((prev) => prev.map((p) => (p.id === id ? { ...p, verified: true } : p)));
-  };
+  /** mark for verify **/
+const markVerified = async (id: string) => {
+  try {
+    const res = await fetch("/api/mark-proof-verified", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ proofId: id }),
+    });
 
-  /** ---- Geocode address ---- **/
+    const result = await res.json();
+    if (!res.ok) throw new Error(result.error || "Failed to verify proof");
+
+    // remove from state instantly so it just pops off 
+    setProofs((prev) => prev.filter((p) => p.id !== id));
+
+    toast.success("Proof verified and removed from pending list!");
+  } catch (err: any) {
+    console.error(err);
+    toast.error(err.message || "Failed to verify proof.");
+  }
+};
+
+
+
+  /** geocoding **/
   const geocodeAddress = async (address: string) => {
     const res = await fetch(
       `https://nominatim.openstreetmap.org/search?q=${encodeURIComponent(
@@ -103,7 +121,7 @@ export default function OrganizationDashboard() {
     return null;
   };
 
-  /** ---- Handle create opportunity ---- **/
+  /** handle creating opportunity **/
   const handleCreateOpportunity = async (e: FormEvent) => {
     e.preventDefault();
     if (!profile) return;
@@ -130,6 +148,7 @@ export default function OrganizationDashboard() {
         organization: profile.name || profile.email,
         latitude: coords.lat,
         longitude: coords.lng,
+        date: newOpportunity.date
       },
     ]);
 
@@ -143,8 +162,7 @@ export default function OrganizationDashboard() {
 
     setCreating(false);
   };
-
-  /** ---- Render ---- **/
+  
   return (
     <div data-page-title="Organization Dashboard" className="max-w-5xl mx-auto p-6 text-gray-700">
       <h1 className="text-3xl font-bold mb-6">Organization Dashboard</h1>
@@ -224,6 +242,20 @@ export default function OrganizationDashboard() {
               required
             />
           </div>
+
+          <div>
+            <label className="block mb-1 font-medium">Date</label>
+            <input
+              type="date"
+              className="w-full border p-2 rounded"
+              value={newOpportunity.date || ""}
+              onChange={(e) =>
+                setNewOpportunity({ ...newOpportunity, date: e.target.value })
+              }
+              required
+            />
+          </div>
+
 
           <button
             type="submit"

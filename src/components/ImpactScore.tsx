@@ -15,7 +15,7 @@ export default function ImpactScore() {
   const { profile } = useAuth();
   const [score, setScore] = useState<number | null>(null);
 
-  // Define tiers and thresholds
+  // define tiers and thresholds
   const tiers = [
     { name: "Bronze", min: 0, max: 10 },
     { name: "Silver", min: 10, max: 30 },
@@ -59,14 +59,14 @@ export default function ImpactScore() {
 
   if (score === null) return <p>Loading impact score...</p>;
 
-  // Determine current tier
+  // determine current tier
   const currentTier = tiers.find((t) => score >= t.min && score < t.max) || tiers[tiers.length - 1];
   const nextTier = tiers.find((t) => t.min > currentTier.min);
 
-  // Calculate progress towards next tier
+  // calculate progress towards next tier
   const progress = nextTier
     ? Math.min((score - currentTier.min) / (nextTier.min - currentTier.min), 1)
-    : 1; // Full if at top tier
+    : 1; // full if at top tier
 
   return (
     <div className="p-4 bg-white rounded-lg shadow-md max-w-sm">

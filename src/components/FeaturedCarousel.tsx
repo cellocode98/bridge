@@ -24,19 +24,19 @@ export default function FeaturedCarousel({ featured }: FeaturedCarouselProps) {
 
   const speed = 50; // pixels per second
 
-  // Repeat items 3 times for smooth infinite scroll
+  // repeat items 3 times for smooth infinite scroll
   const repeatedItems = Array(3)
     .fill(null)
     .flatMap(() => featured);
 
-  // Measure the width of a single set of items
+  // measure the width of a single set of items
   useEffect(() => {
     if (containerRef.current) {
       setSingleSetWidth(containerRef.current.scrollWidth / 3);
     }
   }, [featured]);
 
-  // Infinite scroll using x.get() (TypeScript-safe)
+  // infinite scroll using x.get() (ts-safe)
   useAnimationFrame((t, delta) => {
     if (!isPaused && singleSetWidth > 0) {
       const current = x.get() as number;
@@ -48,43 +48,43 @@ export default function FeaturedCarousel({ featured }: FeaturedCarouselProps) {
 
   return (
     <div
-      className="relative overflow-hidden cursor-pointer"
-      onMouseEnter={() => setIsPaused(true)}
-      onMouseLeave={() => setIsPaused(false)}
-    >
-      <motion.div ref={containerRef} className="flex gap-6" style={{ x }}>
-        {repeatedItems.map((opp, idx) => (
-          <div
-            key={`${opp.id}-${idx}`}
-            className="min-w-[300px] p-6 rounded-xl shadow-md flex flex-col justify-between transition-transform duration-300 hover:scale-105 hover:shadow-xl bg-gradient-to-br from-purple-100 via-pink-100 to-red-100 border-2 border-purple-400"
-          >
-            {/* Featured tag inline */}
-            {opp.featured && (
-              <span className="self-start px-2 py-1 text-xs font-bold bg-purple-600 text-white rounded-full mb-2">
-                FEATURED
-              </span>
-            )}
+        className="relative overflow-hidden cursor-pointer"
+        onMouseEnter={() => setIsPaused(true)}
+        onMouseLeave={() => setIsPaused(false)}
+      >
+        <motion.div ref={containerRef} className="flex gap-6" style={{ x }}>
+          {repeatedItems.map((opp, idx) => (
+            <div
+              key={`${opp.id}-${idx}`}
+              className="min-w-[300px] p-6 rounded-xl shadow-sm flex flex-col justify-between transition-transform duration-300 hover:scale-105 hover:shadow-md bg-white border border-gray-200"
+            >
+              {/* Featured tag inline */}
+              {opp.featured && (
+                <span className="self-start px-2 py-1 text-xs font-bold bg-indigo-600 text-white rounded-full mb-2">
+                  FEATURED
+                </span>
+              )}
 
-            <h3 className="font-bold text-xl text-gray-800">{opp.title}</h3>
-            <p className="text-gray-700 text-sm mt-1">{opp.organization}</p>
-            <p className="text-gray-700 text-sm mt-2 line-clamp-3">{opp.description}</p>
+              <h3 className="font-semibold text-lg text-gray-800">{opp.title}</h3>
+              <p className="text-gray-600 text-sm mt-1">{opp.organization}</p>
+              <p className="text-gray-700 text-sm mt-2 line-clamp-3 leading-relaxed">{opp.description}</p>
 
-            {opp.tags && (
-              <div className="mt-2 flex flex-wrap gap-2">
-                {opp.tags.map((tag) => (
-                  <span
-                    key={tag}
-                    className="text-xs font-medium px-2 py-1 bg-gradient-to-r from-blue-100 via-purple-100 to-pink-100 text-purple-800 rounded-full"
-                  >
-                    {tag}
-                  </span>
-                ))}
-              </div>
-            )}
-          </div>
-        ))}
-      </motion.div>
-    </div>
+              {opp.tags && (
+                <div className="mt-3 flex flex-wrap gap-2">
+                  {opp.tags.map((tag) => (
+                    <span
+                      key={tag}
+                      className="text-xs font-medium px-2 py-1 rounded-md bg-gray-100 text-gray-700 border border-gray-200"
+                    >
+                      {tag}
+                    </span>
+                  ))}
+                </div>
+              )}
+            </div>
+          ))}
+        </motion.div>
+      </div>
   );
 }
 

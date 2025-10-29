@@ -26,13 +26,13 @@ export default function FeaturePreviews() {
         {[
           {
             title: "Smart Matching",
-            desc: "Get personalized opportunity recommendations that align with your skills and interests.",
+            desc: "Filter through opportunities that align with your skills and interests.",
             icon: "🔍",
             gradient: "from-blue-500 to-purple-500",
           },
           {
             title: "Impact Tracking",
-            desc: "Visualize your growth and community contributions with beautiful progress insights.",
+            desc: "Visualize your growth and community contributions with progress insights.",
             icon: "📊",
             gradient: "from-green-500 to-blue-500",
           },
@@ -44,7 +44,7 @@ export default function FeaturePreviews() {
           },
           {
             title: "Seamless Experience",
-            desc: "Enjoy an intuitive, fast, and mobile-friendly platform built for accessibility and ease.",
+            desc: "Enjoy an intuitive, fast, friendly platform built for accessibility and ease.",
             icon: "⚡",
             gradient: "from-yellow-500 to-purple-500",
           },

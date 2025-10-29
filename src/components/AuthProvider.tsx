@@ -7,7 +7,7 @@ import { supabase } from "@/lib/supabaseClient";
 interface UserProfile {
   id: string;
   email: string;
-  role: string; // ← added role
+  role: string; 
   name?: string;
   avatar_url?: string;
   bio?: string;

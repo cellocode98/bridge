@@ -7,20 +7,25 @@ import { motion, AnimatePresence } from "framer-motion";
 
 interface VolunteerCalendarProps {
   opportunities: {
-    date: string;
+    date: string; // YYYY-MM-DD
     title: string;
     organization: string;
   }[];
 }
 
+// parse date string YYYY-MM-DD as local date
+function parseLocalDate(dateString: string) {
+  const [year, month, day] = dateString.split("-").map(Number);
+  return new Date(year, month - 1, day);
+}
+
 export default function VolunteerCalendar({ opportunities }: VolunteerCalendarProps) {
   const [selectedDate, setSelectedDate] = useState<Date | null>(null);
-  const [eventsForDay, setEventsForDay] = useState<
-    { title: string; organization: string }[]
-  >([]);
+  const [eventsForDay, setEventsForDay] = useState<{ title: string; organization: string }[]>([]);
 
+  // map all opportunity dates to local dates
   const markedDates = useMemo(
-    () => opportunities.map((op) => new Date(op.date).toDateString()),
+    () => opportunities.map((op) => parseLocalDate(op.date).toDateString()),
     [opportunities]
   );
 
@@ -32,18 +37,18 @@ export default function VolunteerCalendar({ opportunities }: VolunteerCalendarPr
 
   const handleDateClick = (date: Date) => {
     const events = opportunities.filter(
-      (op) => new Date(op.date).toDateString() === date.toDateString()
+      (op) => parseLocalDate(op.date).toDateString() === date.toDateString()
     );
     setSelectedDate(date);
     setEventsForDay(events);
   };
 
   return (
-    <div className="relative w-full">
+    <div className="relative w-full text-gray-700">
       <Calendar
         tileClassName={tileClassName}
         onClickDay={handleDateClick}
-        className="rounded-3xl border-none shadow-md w-full bg-white/70 backdrop-blur-lg p-4"
+        className="rounded-3xl border-none shadow-md w-full bg-white/70 backdrop-blur-lg p-4 text-gray-700"
       />
 
       {/* Modal Popup for events on selected date */}

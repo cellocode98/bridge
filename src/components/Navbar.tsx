@@ -15,9 +15,10 @@ export default function Navbar() {
     { name: "Opportunities", href: "/opportunities" },
     { name: "Profile", href: "/profile" },
     { name: "Login", href: "/auth" },
+    { name: "Leaderboard", href: "/leaderboard"}
   ];
 
-  // Conditionally add Verify button for orgs
+  // conditionally add verify button for orgs
   if (profile?.role === "organization") {
     links.splice(1, 0, { name: "Verify", href: "/verify" });
   }
