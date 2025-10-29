@@ -7,7 +7,7 @@ import { supabase } from "@/lib/supabaseClient";
 interface UserProfile {
   id: string;
   email: string;
-  role: string;
+  role?: string;
   name?: string;
   avatar_url?: string;
   bio?: string;
@@ -39,66 +39,26 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [profile, setProfile] = useState<UserProfile | null>(null);
   const [loading, setLoading] = useState(true);
 
-  // Function to upsert user in DB
-  const upsertUser = async (user: any) => {
-    await supabase
-      .from("users")
-      .upsert(
-        {
-          id: user.id,
-          email: user.email,
-          name: user.user_metadata?.full_name,
-          avatar_url: user.user_metadata?.avatar_url,
-        },
-        { onConflict: "id", ignoreDuplicates: true } // preserves existing role
-      );
-  };
-
-  // Fetch user profile from DB
-  const fetchProfile = async (userId: string) => {
-    const { data, error } = await supabase
-      .from("users")
-      .select("*")
-      .eq("id", userId)
-      .single();
-
-    if (!error && data) setProfile(data);
-  };
-
-  // Update user profile
-  const updateProfile = async (updates: Partial<UserProfile>) => {
-    if (!user) return;
-    const { data, error } = await supabase
-      .from("users")
-      .update(updates)
-      .eq("id", user.id)
-      .select()
-      .single();
-    if (!error && data) setProfile(data);
-  };
-
-  // Sign out
-  const signOut = async () => {
-    await supabase.auth.signOut();
-    setUser(null);
-    setProfile(null);
-  };
-
   useEffect(() => {
     const initAuth = async () => {
-      // Get current session
-      const { data: { session } } = await supabase.auth.getSession();
-      if (session?.user) {
-        setUser(session.user);
-        await upsertUser(session.user);
-        await fetchProfile(session.user.id);
+      try {
+        const { data: { session }, error } = await supabase.auth.getSession();
+        if (error) console.error("Error getting session:", error);
+
+        if (session?.user) {
+          setUser(session.user);
+          await upsertUser(session.user);
+          await fetchProfile(session.user.id);
+        }
+      } catch (err) {
+        console.error("Error initializing auth:", err);
+      } finally {
+        setLoading(false); // ensure loading ends
       }
-      setLoading(false);
     };
 
     initAuth();
 
-    // Listen for auth changes
     const { data: listener } = supabase.auth.onAuthStateChange(async (_event, session) => {
       if (session?.user) {
         setUser(session.user);
@@ -113,9 +73,62 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     return () => listener.subscription.unsubscribe();
   }, []);
 
+  const upsertUser = async (user: any) => {
+    try {
+      await supabase.from("users").upsert(
+        {
+          id: user.id,
+          email: user.email,
+          name: user.user_metadata?.full_name,
+          avatar_url: user.user_metadata?.avatar_url,
+        },
+        { onConflict: "id", ignoreDuplicates: true } // preserves existing role
+      );
+    } catch (err) {
+      console.error("Error upserting user:", err);
+    }
+  };
+
+  const fetchProfile = async (userId: string) => {
+    try {
+      const { data, error } = await supabase.from("users").select("*").eq("id", userId).single();
+      if (error) console.error("Error fetching profile:", error);
+      if (data) setProfile(data);
+    } catch (err) {
+      console.error("Error fetching profile:", err);
+    }
+  };
+
+  const updateProfile = async (updates: Partial<UserProfile>) => {
+    if (!user) return;
+    try {
+      const { data, error } = await supabase
+        .from("users")
+        .update(updates)
+        .eq("id", user.id)
+        .select()
+        .single();
+      if (error) console.error("Error updating profile:", error);
+      if (data) setProfile(data);
+    } catch (err) {
+      console.error("Error updating profile:", err);
+    }
+  };
+
+  const signOut = async () => {
+    try {
+      await supabase.auth.signOut();
+    } catch (err) {
+      console.error("Error signing out:", err);
+    } finally {
+      setUser(null);
+      setProfile(null);
+    }
+  };
+
   return (
     <AuthContext.Provider value={{ user, profile, loading, updateProfile, signOut }}>
-      {loading ? <p>Loading...</p> : children}
+      {children}
     </AuthContext.Provider>
   );
 }
