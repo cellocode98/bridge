@@ -1,36 +1,53 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# Bridge – Volunteer Opportunities App
 
-## Getting Started
+![Bridge Logo](./assets/bridge-logo.png)  
+*Connecting volunteers to opportunities and tracking community impact.*
 
-First, run the development server:
+[![License](https://img.shields.io/badge/license-Educational-blue)](#)  
+[![Supabase](https://img.shields.io/badge/backend-Supabase-3ECF8E)](#)  
+[![Next.js](https://img.shields.io/badge/frontend-Next.js-black)](#)  
 
-```bash
-npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
-```
+---
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+## Overview
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+**Bridge** is a web app designed to help volunteers discover, track, and showcase their community service. Users can sign up for opportunities, submit proof of participation, and visualize their volunteer contributions through an interactive dashboard and calendar.
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+**Key Features:**
 
-## Learn More
+- **Dashboard:** Track total hours, completed and upcoming opportunities, and your impact score.  
+- **Opportunity Management:** Browse and sign up for volunteer events, submit proof for verification.  
+- **Volunteer Calendar:** Interactive calendar to visualize scheduled activities.  
+- **Leaderboard:** Compare your contributions with other volunteers, with medals for top contributors.  
+- **Impact Score:** Points system: 1 hour = 1 point, featured opportunities ×1.5.  
+- **Responsive Design:** Smooth animations and mobile-friendly layout.  
 
-To learn more about Next.js, take a look at the following resources:
+---
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+## Screenshots
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+![Dashboard Screenshot](./assets/dashboard.png)  
+*User dashboard with stats, calendar, and impact score.*
 
-## Deploy on Vercel
+![Volunteer Calendar Screenshot](./assets/calendar.png)  
+*Interactive calendar displaying signed-up opportunities.*
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+![Leaderboard Screenshot](./assets/leaderboard.png)  
+*Leaderboard showing top volunteers and their impact scores.*
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+---
+
+## Technology Stack
+
+- **Frontend:** Next.js, React, Tailwind CSS, Framer Motion  
+- **Backend:** Supabase (PostgreSQL, Auth, Storage)  
+- **Charts:** Recharts  
+- **Hosting:** Vercel
+
+---
+
+## Future Improvements
+
+- Push notifs for upcoming events
+- Advanced filtering and search for opportunities
+- Other visual modules to improve engagement
