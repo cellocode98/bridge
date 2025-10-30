@@ -7,6 +7,7 @@ import FeaturedCarousel from "@/components/FeaturedCarousel";
 import { supabase } from "@/lib/supabaseClient";
 import { useAuth } from "@/components/AuthProvider";
 import toast from "react-hot-toast";
+import Chatbot from "./Chatbot";
 
 interface Opportunity {
   id: string;
@@ -18,6 +19,7 @@ interface Opportunity {
   latitude?: number;
   longitude?: number;
   distanceMiles?: number;
+  date?: string;
 }
 
 export default function OpportunitiesPage() {
@@ -200,6 +202,19 @@ export default function OpportunitiesPage() {
                   )}
                 </p>
                 <p className="text-gray-700 text-sm mt-3 line-clamp-4 leading-relaxed">{opp.description}</p>
+                {opp.date && (
+                <p className="text-gray-500 text-sm mt-1">
+                  {(() => {
+                    const [year, month, day] = opp.date.slice(0, 10).split("-").map(Number);
+                    const localDate = new Date(year, month - 1, day);
+                    return localDate.toLocaleDateString(undefined, {
+                      month: "short",
+                      day: "numeric",
+                      year: "numeric",
+                    });
+                  })()}
+                </p>
+                  )}
                 {opp.tags && (
                   <div className="mt-3 flex flex-wrap gap-2">
                     {opp.tags.map((tag) => (
@@ -223,6 +238,7 @@ export default function OpportunitiesPage() {
           ))}
         </div>
       </section>
+      <Chatbot/>
     </main>
   );
 }

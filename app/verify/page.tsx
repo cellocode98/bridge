@@ -4,6 +4,8 @@ import { useState, useEffect, FormEvent } from "react";
 import { supabase } from "@/lib/supabaseClient";
 import { useAuth } from "@/components/AuthProvider";
 import toast from "react-hot-toast";
+import Chatbot from "@/components/Chatbot";
+import OrganizationChatbot from "@/components/OrgChatbot";
 
 //typescript interfaces
 interface Opportunity {
@@ -266,6 +268,7 @@ const markVerified = async (id: string) => {
           </button>
         </form>
       </section>
+      <OrganizationChatbot org_name={"Liam"}/>
     </div>
   );
 }

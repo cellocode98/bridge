@@ -19,10 +19,11 @@ const OpportunityCard: React.FC<{ opportunity: Opportunity & { isCompleted?: boo
   opportunity,
 }) => {
   const eventDate = new Date(opportunity.date);
-  const now = new Date();
+  const today = new Date();
+      today.setHours(0, 0, 0, 0); // local midnight
 
   const isCompleted = opportunity.isCompleted === true;
-  const hasPassed = eventDate < now;
+  const hasPassed = eventDate < today;
 
   // determine display status
   let displayStatus = "Upcoming";

@@ -10,6 +10,7 @@ import HoursPieChart from "@/components/PieChart";
 import VolunteerCalendar from "@/components/VolunteerCalendar";
 import { motion, Variants, easeOut } from "framer-motion";
 import ImpactScore from "@/components/ImpactScore";
+import Chatbot from "@/components/Chatbot";
 
 interface Opportunity {
   id: string;
@@ -78,21 +79,27 @@ useEffect(() => {
 
       if (error) throw error;
 
-      const now = new Date();
+      const today = new Date();
+      today.setHours(0, 0, 0, 0); // local midnight
+
+      const parseLocalDate = (dateString: string) => {
+        const [year, month, day] = dateString.slice(0, 10).split("-").map(Number);
+        return new Date(year, month - 1, day); // local midnight
+      };
 
       const userOpportunities = (data || []).map((item: any) => {
         const proofs = item.opportunity.proofs || [];
         const proofVerified = proofs.some(
           (p: any) => p.verified === true || p.verified === "true"
         );
-        const oppDate = new Date(item.opportunity.date);
+
+        const oppDate = parseLocalDate(item.opportunity.date);
 
         // Determine dynamic status
         let derivedStatus = item.status;
-
         if (proofVerified || item.status === "Completed") {
           derivedStatus = "Completed";
-        } else if (oppDate <= now) {
+        } else if (oppDate < today) {
           derivedStatus = "Pending";
         } else {
           derivedStatus = "Upcoming";
@@ -104,7 +111,7 @@ useEffect(() => {
           organization: item.opportunity.organization,
           date: item.opportunity.date,
           cause: item.opportunity.category,
-          hours: item.opportunity.hours, 
+          hours: item.opportunity.hours,
           status: derivedStatus,
           applied_at: item.applied_at,
           proofs,
@@ -122,6 +129,7 @@ useEffect(() => {
 
   fetchUserApplications();
 }, [profile]);
+
 
 
 
@@ -309,6 +317,7 @@ useEffect(() => {
           </div>
         </div>
       </motion.main>
+      <Chatbot/>
     </div>
   );
 }

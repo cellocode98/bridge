@@ -7,15 +7,16 @@ import { motion, AnimatePresence } from "framer-motion";
 
 interface VolunteerCalendarProps {
   opportunities: {
-    date: string; // YYYY-MM-DD
+    date: string; // YYYY-MM-DD or ISO string
     title: string;
     organization: string;
   }[];
 }
 
-// parse date string YYYY-MM-DD as local date
+// Robust date parser: handles YYYY-MM-DD and ISO strings
 function parseLocalDate(dateString: string) {
-  const [year, month, day] = dateString.split("-").map(Number);
+  // Extract YYYY-MM-DD even if full ISO is provided
+  const [year, month, day] = dateString.slice(0, 10).split("-").map(Number);
   return new Date(year, month - 1, day);
 }
 
@@ -23,7 +24,7 @@ export default function VolunteerCalendar({ opportunities }: VolunteerCalendarPr
   const [selectedDate, setSelectedDate] = useState<Date | null>(null);
   const [eventsForDay, setEventsForDay] = useState<{ title: string; organization: string }[]>([]);
 
-  // map all opportunity dates to local dates
+  // Map all opportunity dates to local dates for highlighting
   const markedDates = useMemo(
     () => opportunities.map((op) => parseLocalDate(op.date).toDateString()),
     [opportunities]
