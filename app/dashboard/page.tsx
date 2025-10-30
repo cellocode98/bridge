@@ -97,9 +97,9 @@ useEffect(() => {
 
         // Determine dynamic status
         let derivedStatus = item.status;
-        if (proofVerified || item.status === "Completed") {
+        if (proofVerified && item.status === "Completed") {
           derivedStatus = "Completed";
-        } else if (oppDate < today) {
+        } else if (oppDate <= today) {
           derivedStatus = "Pending";
         } else {
           derivedStatus = "Upcoming";

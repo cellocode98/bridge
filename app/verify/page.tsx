@@ -42,6 +42,7 @@ export default function OrganizationDashboard() {
     description: "",
     featured: false,
     address: "",
+    date: ""
   });
   const [creating, setCreating] = useState(false);
 
@@ -125,48 +126,75 @@ const markVerified = async (id: string) => {
 
   /** handle creating opportunity **/
   const handleCreateOpportunity = async (e: FormEvent) => {
-    e.preventDefault();
-    if (!profile) return;
+  e.preventDefault();
+  if (!profile) {
+    console.log("No profile found — cannot create opportunity");
+    return;
+  }
 
-    if (!newOpportunity.title || !newOpportunity.description || !newOpportunity.address) {
-      toast.error("Please fill out all required fields.");
-      return;
-    }
+  if (!newOpportunity.title || !newOpportunity.description || !newOpportunity.address) {
+    toast.error("Please fill out all required fields.");
+    return;
+  }
 
-    setCreating(true);
+  console.log(" Submitting opportunity with data:", newOpportunity);
+  setCreating(true);
 
+  try {
+    console.log("Geocoding address:", newOpportunity.address);
     const coords = await geocodeAddress(newOpportunity.address);
+    console.log("Geocode result:", coords);
+
     if (!coords) {
       toast.error("Could not find coordinates for this address.");
       setCreating(false);
       return;
     }
 
-    const { error } = await supabase.from("opportunities").insert([
-      {
-        title: newOpportunity.title,
-        description: newOpportunity.description,
-        featured: newOpportunity.featured,
-        organization: profile.name || profile.email,
-        latitude: coords.lat,
-        longitude: coords.lng,
-        date: newOpportunity.date
-      },
-    ]);
+    const opportunityPayload = {
+      title: newOpportunity.title,
+      description: newOpportunity.description,
+      featured: newOpportunity.featured,
+      organization: profile.name || profile.email,
+      latitude: coords.lat,
+      longitude: coords.lng,
+      date: new Date(newOpportunity.date || "").toISOString().split("T")[0],
+    };
+
+    console.log("Inserting into Supabase:", opportunityPayload);
+
+    const { data, error } = await supabase
+      .from("opportunities")
+      .insert([opportunityPayload])
+      .select(); // <- include so can get response data
+
+    console.log("Supabase insert result:", { data, error });
 
     if (error) {
-        console.error(error) 
-        toast.error("Failed to create opportunity."); }
-    else {
-      toast.success("Opportunity created!");
-      setNewOpportunity({ title: "", description: "", featured: false, address: "" });
+      console.error("❌ Supabase insert error:", error);
+      toast.error(`Failed to create opportunity: ${error.message}`);
+    } else {
+      toast.success("✅ Opportunity created!");
+      setNewOpportunity({
+        title: "",
+        description: "",
+        featured: false,
+        address: "",
+        date: "",
+      });
     }
+  } catch (err) {
+    console.error("Unexpected error:", err);
+    toast.error("Unexpected error occurred while creating opportunity.");
+  }
 
-    setCreating(false);
-  };
+  console.log("Finished create handler — resetting state.");
+  setCreating(false);
+};
+
   
   return (
-    <div data-page-title="Organization Dashboard" className="max-w-5xl mx-auto p-6 text-gray-700">
+    <div data-page-title="Organization Dashboard" className="max-w-5xl mx-auto p-6 text-gray-700 pt-20">
       <h1 className="text-3xl font-bold mb-6">Organization Dashboard</h1>
 
       {/* --- Pending Proofs --- */}
@@ -220,7 +248,7 @@ const markVerified = async (id: string) => {
           </div>
 
           <div>
-            <label className="block mb-1 font-medium">Description</label>
+            <label className="block mb-1 font-medium">Description / Location</label>
             <textarea
               className="w-full border p-2 rounded"
               value={newOpportunity.description}

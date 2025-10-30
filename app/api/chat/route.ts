@@ -92,7 +92,7 @@ Here is the context based on the type "${type}":
 ${contextSummary}
 
 Answer the user's question based on this context.
-If the user asks something unrelated, answer politely but do not invent data. Do not format your answers with markdown.
+If the user asks something unrelated, answer politely but do not invent data. Do not format your answers with markdown language (ex. **, __, #, etc).
 Also, an opportunity is considered "pending" if the date of the opportunity is currently now or in the past. 
 You don't need to say the entire entry of an opportunity or application, just summarize the key details relevant to the user's question.
 User: "${message}"
