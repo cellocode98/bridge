@@ -20,7 +20,7 @@
 - **Volunteer Calendar:** Interactive calendar to visualize scheduled activities.  
 - **Leaderboard:** Compare your contributions with other volunteers, with medals for top contributors.  
 - **Impact Score:** Points system: 1 hour = 1 point, featured opportunities ×1.5.
-- **AI Assistant** AI Assistant that can help with either organization or user questions.
+- **AI Assistant:** AI Assistant that can help with either organization or user questions.
 - **Responsive Design:** Smooth animations and friendly layout.  
 
 ---
