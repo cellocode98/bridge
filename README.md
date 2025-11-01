@@ -1,6 +1,6 @@
 # Bridge – Volunteer Opportunities App
 
-![Bridge Logo](./assets/bridge-logo.png)  
+![Bridge Logo](./assets/bridge-logo.jpeg)  
 *Connecting volunteers to opportunities and tracking community impact.*
 
 [![License](https://img.shields.io/badge/license-Educational-blue)](#)  
